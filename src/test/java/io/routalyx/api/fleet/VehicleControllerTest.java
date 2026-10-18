@@ -1,0 +1,58 @@
+package io.routalyx.api.fleet;
+
+import io.routalyx.fleet.VehicleStatus;
+import io.routalyx.fleet.application.VehicleService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(VehicleController.class)
+class VehicleControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private VehicleService vehicleService;
+
+    @Test
+    void shouldReturnAllVehicles() throws Exception {
+        UUID vehicleId = UUID.fromString(
+                "929819c3-7d0b-46c1-9efb-5ff809221953"
+        );
+
+        OffsetDateTime createdAt =
+                OffsetDateTime.parse("2026-10-17T22:56:00Z");
+
+        given(vehicleService.getAllVehicles()).willReturn(List.of(
+                new VehicleResponse(
+                        vehicleId,
+                        "DBTEST-001",
+                        VehicleStatus.AVAILABLE,
+                        false,
+                        createdAt
+                )
+        ));
+
+        mockMvc.perform(get("/api/v1/vehicles"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(content().contentTypeCompatibleWith("application/json"))
+                .andExpect(jsonPath("$[0].id").value(vehicleId.toString()))
+                .andExpect(jsonPath("$[0].licensePlate").value("DBTEST-001"))
+                .andExpect(jsonPath("$[0].status").value("AVAILABLE"))
+                .andExpect(jsonPath("$[0].activeSafetyIssue").value(false));
+    }
+}
