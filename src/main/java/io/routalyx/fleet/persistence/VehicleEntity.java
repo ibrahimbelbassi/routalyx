@@ -50,6 +50,16 @@ public class VehicleEntity {
         this.createdAt = OffsetDateTime.now();
     }
 
+    public void update(
+            String licensePlate,
+            VehicleStatus status,
+            boolean activeSafetyIssue
+    ) {
+        this.licensePlate = licensePlate;
+        this.status = status;
+        this.activeSafetyIssue = activeSafetyIssue;
+    }
+
     public UUID getId() {
         return id;
     }
