@@ -5,8 +5,10 @@ import io.routalyx.fleet.application.VehicleService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -54,5 +56,46 @@ class VehicleControllerTest {
                 .andExpect(jsonPath("$[0].licensePlate").value("DBTEST-001"))
                 .andExpect(jsonPath("$[0].status").value("AVAILABLE"))
                 .andExpect(jsonPath("$[0].activeSafetyIssue").value(false));
+    }
+
+
+    @Test
+    void shouldReturnVehicleById() throws Exception {
+        UUID vehicleId = UUID.fromString(
+                "929819c3-7d0b-46c1-9efb-5ff809221953"
+        );
+
+        OffsetDateTime createdAt =
+                OffsetDateTime.parse("2026-10-17T22:56:00Z");
+
+        VehicleResponse response = new VehicleResponse(
+                vehicleId,
+                "DBTEST-001",
+                VehicleStatus.AVAILABLE,
+                false,
+                createdAt
+        );
+
+        given(vehicleService.getVehicleById(vehicleId))
+                .willReturn(response);
+
+        mockMvc.perform(get("/api/v1/vehicles/{id}", vehicleId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(vehicleId.toString()))
+                .andExpect(jsonPath("$.licensePlate").value("DBTEST-001"));
+    }
+
+    @Test
+    void shouldReturnNotFoundForUnknownVehicle() throws Exception {
+        UUID unknownId = UUID.randomUUID();
+
+        given(vehicleService.getVehicleById(unknownId))
+                .willThrow(new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Vehicle not found"
+                ));
+
+        mockMvc.perform(get("/api/v1/vehicles/{id}", unknownId))
+                .andExpect(status().isNotFound());
     }
 }
