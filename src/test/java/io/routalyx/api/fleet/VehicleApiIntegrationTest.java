@@ -135,6 +135,37 @@ class VehicleApiIntegrationTest {
     }
 
     @Test
+    void shouldRejectLicensePlateLongerThanTwentyCharacters() throws Exception {
+        String invalidRequest = """
+            {
+              "licensePlate": "ABCDEFGHIJKLMNOPQRSTU",
+              "status": "AVAILABLE",
+              "activeSafetyIssue": false
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/vehicles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldRejectMissingStatus() throws Exception {
+        String invalidRequest = """
+            {
+              "licensePlate": "T-VALIDATION-01",
+              "activeSafetyIssue": false
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/vehicles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldReturnNotFoundWhenUpdatingUnknownVehicle() throws Exception {
         UUID unknownId = UUID.randomUUID();
 
