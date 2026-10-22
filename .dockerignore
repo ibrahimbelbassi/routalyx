@@ -1,0 +1,15 @@
+# Secrets und lokale Konfiguration
+.env
+.env.*
+
+# Git und Build-Artefakte
+.git/
+target/
+
+# IDE-Konfiguration
+.idea/
+.vscode/
+
+# Lokale Dokumentation und Hilfsskripte
+docs/
+scripts/
