@@ -1,0 +1,50 @@
+name: Routalyx CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: routalyx_test
+          POSTGRES_USER: routalyx_test
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U routalyx_test -d routalyx_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run Maven tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/routalyx_test
+          SPRING_DATASOURCE_USERNAME: routalyx_test
+          SPRING_DATASOURCE_PASSWORD: test_password
+        run: ./mvnw --batch-mode --no-transfer-progress verify
