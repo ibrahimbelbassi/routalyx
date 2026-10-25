@@ -48,3 +48,15 @@ jobs:
           SPRING_DATASOURCE_USERNAME: routalyx_test
           SPRING_DATASOURCE_PASSWORD: test_password
         run: ./mvnw --batch-mode --no-transfer-progress verify
+
+  build-image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --tag routalyx:ci .
