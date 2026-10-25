@@ -1,9 +1,10 @@
 # Routalyx – Learning Journey
 
-**Stand:** 22. Oktober 2026
+**Stand:** 26. Oktober 2026
 **Projekt:** Routalyx – Flottenmanagement und Analytics
-**Aktueller Entwicklungsbranch:** `feat/docker-test-infrastructure`
-**API-Validierung:** separat committet unter `a017a7b`
+**Aktueller Entwicklungsbranch:** `docs/update-learning-journey`
+**Aktueller Hauptbranch:** `main` – Commit `f4aa37d`
+**Letzter Meilenstein:** GitHub Actions für Tests und Docker-Image-Build (PR #4 und #5)
 
 ## 1. Projektziel und Lernansatz
 
@@ -63,7 +64,9 @@ Dadurch muss das Maven-Build-Image nicht Teil des finalen Laufzeit-Images sein.
 
 Der Container startet die Anwendung über `java -jar /app/app.jar` und stellt Port 8080 als Container-Port bereit.
 
-**Status:** Dockerfile angelegt. Eine separate Verifikation des finalen Images und seiner Laufzeit steht noch aus.
+**Status:** Das Multi-Stage-Dockerfile wurde lokal erfolgreich gebaut. Das Image `routalyx:ci` wurde anschließend mit `docker image ls routalyx` nachgewiesen. Der Build verwendet zwei Stufen: Maven für das Packaging und ein schlankeres Java-Runtime-Image für die Anwendung.
+
+**Abgrenzung:** Der erfolgreiche Image-Build bestätigt noch nicht automatisch, dass jede Laufzeitkonfiguration korrekt ist. Ein Registry-Push und ein Deployment sind noch nicht umgesetzt.
 
 ### Docker-Build-Kontext und `.dockerignore`
 
@@ -139,28 +142,118 @@ Neue, noch nicht versionierte Dateien müssen zusätzlich geprüft werden, da si
 
 Ein Commit speichert Änderungen lokal im Repository. Ein Push überträgt sie zum konfigurierten Remote-Repository. Beides sind getrennte Schritte.
 
-## 10. Lernstand
+## 10. CI mit GitHub Actions
 
-**Umgesetzt und verifiziert:**
-- getrennte Compose-Dienste für Entwicklungs- und Testdatenbank
-- Umgebungsvariablen für Datenbankverbindungen
-- Docker-basierten Maven-Testlauf
-- Shell-Skript mit automatischem Cleanup
-- erfolgreicher Testlauf mit 18 Tests
-- Multi-Stage-Dockerfile angelegt und Anwendungsimage erfolgreich gebaut
-- Spring-Boot-Anwendung im Container gestartet
-- Actuator- und Fahrzeug-API-Endpunkte mit HTTP 200 geprüft
-- `.dockerignore` angelegt
-- API-Validierungstests separat committet
+Die Datei `.github/workflows/ci.yml` definiert die automatisierte CI-Pipeline.
 
-**Noch offen:**
-- Docker-Image und Containerstart separat verifizieren
-- Fehlerfall des Testskripts prüfen
-- beobachtete Warnungen untersuchen
-- Änderungen reviewen und committen
-- CI/CD mit GitHub Actions aufbauen
-- Fehlerfall des Testskripts prüfen
-- Docker-Build-Kontext und `.dockerignore` abschließend überprüfen
+### Test-Job
+
+Der Job `test` läuft auf einem GitHub-gehosteten Ubuntu-Runner. Er richtet Java 21 ein, verwendet Maven-Caching und startet PostgreSQL 17 Alpine als Datenbank-Service für die Tests.
+
+Der Verifikationsbefehl lautet:
+
+```bash
+./mvnw --batch-mode --no-transfer-progress verify
+```
+
+Die Datenbankverbindung wird über Umgebungsvariablen bereitgestellt. Dadurch sind die Tests nicht von einer lokal installierten PostgreSQL-Instanz abhängig.
+
+### Docker-Image-Build
+
+Der Job `build-image` baut das Docker-Image auf einem GitHub-Runner:
+
+```bash
+docker build --tag routalyx:ci .
+```
+
+Die Abhängigkeit
+
+```yaml
+needs: test
+```
+
+stellt sicher, dass der Image-Build erst beginnt, wenn der Test-Job erfolgreich abgeschlossen wurde.
+
+### Warum zwei Jobs?
+
+Die Trennung macht die Pipeline übersichtlicher. Der Test-Job prüft die Anwendung und ihre Integration mit der Datenbank. Der zweite Job prüft, ob sich aus dem Repository ein Docker-Image bauen lässt.
+
+GitHub Actions verwendet hierfür Runner mit eigener Laufzeitumgebung. Ein auf dem lokalen Fedora-System gebautes Image wird nicht automatisch auf den GitHub-Runner übertragen.
+
+### Git-Workflow und Verifikation
+
+- PR #4 integrierte den Test-Workflow in `main`.
+- PR #5 ergänzte den Docker-Image-Build und wurde ebenfalls erfolgreich gemergt.
+- Die GitHub-Actions-Läufe für beide Pull Requests waren laut bestätigtem Ergebnis erfolgreich.
+- Der lokale Docker-Build von `routalyx:ci` war erfolgreich.
+
+**Noch nicht umgesetzt:** Das Image wird nicht in eine Registry gepusht. Es gibt noch kein automatisiertes Deployment oder Rollback.
+
+### Begriffe
+
+- **CI (Continuous Integration):** Änderungen werden automatisiert gebaut und geprüft.
+- **Runner:** Die Umgebung, auf der ein GitHub-Actions-Job ausgeführt wird.
+- **Job-Abhängigkeit:** `needs: test` legt fest, dass der Image-Build vom erfolgreichen Test-Job abhängt.
+- **Container-Registry:** Ein Dienst, in dem Docker-Images gespeichert und für andere Umgebungen bereitgestellt werden können.
+- **Deployment:** Die Bereitstellung einer Anwendung in einer Zielumgebung.
+
+### Nächste Lernziele
+
+1. Fehlerfall von `scripts/test.sh` gezielt prüfen.
+2. Flyway-Metadatenwarnung HTTP 401 untersuchen.
+3. Spring-Warnung zu `spring.jpa.open-in-view` bewusst bewerten.
+4. Einen Registry-Push planen und erst nach Prüfung der Zugangsdaten und Berechtigungen implementieren.
+5. Darauf aufbauend einen kontrollierten Deployment-Prozess mit Verifikation und Rollback entwickeln.
+
+## 11. Lernstand
+
+### Umgesetzt und verifiziert
+
+**Anwendung und Datenbank**
+- Getrennte Docker-Compose-Dienste für Entwicklungs- und Testdatenbank
+- Konfigurierbare Datenbankverbindungen über Umgebungsvariablen
+- Flyway für Datenbankmigrationen
+- API-Validierungstests für ungültige Eingaben
+
+**Docker und Tests**
+- Docker-basierter Maven-Testlauf mit `scripts/test.sh`
+- Erfolgreicher Testlauf mit 18 Tests, 0 Fehlern und 0 Fehlschlägen
+- Multi-Stage-Dockerfile für Build und Laufzeit
+- Lokaler Docker-Image-Build mit dem Tag `routalyx:ci` erfolgreich
+- Spring-Boot-Anwendung im Container gestartet und zuvor über Actuator- und Fahrzeug-API-Endpunkte mit HTTP 200 geprüft
+- `.dockerignore` zum Ausschluss unnötiger Dateien und lokaler Konfigurationen
+
+**Git und CI/CD**
+- Feature-Branches und Pull Requests für Änderungen verwendet
+- GitHub-Actions-Workflow für automatisierte Maven-Verifikation integriert (PR #4)
+- Separater `build-image`-Job in GitHub Actions integriert (PR #5)
+- `needs: test` stellt sicher, dass der Image-Build erst nach erfolgreichem Test-Job ausgeführt wird
+- Beide Pull Requests erfolgreich gemergt; die CI-Läufe waren laut bestätigtem Ergebnis erfolgreich
+- Lokales `main` mit `origin/main` synchronisiert; Stand `f4aa37d`
+
+### Noch offen
+
+**Tests und Fehlerdiagnose**
+- Fehlerfall von `scripts/test.sh` gezielt prüfen
 - Flyway-Metadatenwarnung HTTP 401 untersuchen
-- Spring-Warnung zu `open-in-view` bewerten
-- Infrastrukturänderungen reviewen und separat committen
+- Spring-Warnung zu `spring.jpa.open-in-view` bewusst bewerten
+
+**Docker und Betrieb**
+- Docker-Build-Kontext und `.dockerignore` bei Bedarf weiter überprüfen
+- Laufzeitkonfiguration des Containers bei Änderungen erneut gezielt verifizieren
+
+**Nächste DevOps-Meilensteine**
+- Docker-Image in eine Registry veröffentlichen
+- Registry-Zugangsdaten und Berechtigungen sicher konfigurieren
+- Deployment-Prozess mit Verifikation und Rollback aufbauen
+- Danach Kubernetes-Deployment für Routalyx vorbereiten, passend zum tatsächlichen Projektstand
+
+### Aktuelle Abgrenzung
+
+**Bereits umgesetzt:** automatisierte Maven-Verifikation und Docker-Image-Build in GitHub Actions.
+
+**Noch nicht umgesetzt:** Registry-Push, automatisiertes Deployment und Rollback.
+
+### Nächster Schritt
+
+Die Dokumentationsänderungen abschließend prüfen und über einen separaten Commit und Pull Request in `main` integrieren. Danach den nächsten technischen Meilenstein anhand des tatsächlichen Projektstands festlegen.
