@@ -2,8 +2,8 @@
 
 **Stand:** 26. Oktober 2026
 **Projekt:** Routalyx – Flottenmanagement und Analytics
-**Aktueller Entwicklungsbranch:** `docs/update-learning-journey`
-**Aktueller Hauptbranch:** `main` – Commit `f4aa37d`
+**Aktueller Entwicklungsbranch:** `test/verify-test-script-cleanup`
+**Aktueller Hauptbranch:** `main` – zuletzt bestätigter Commit `6a7dc20`
 **Letzter Meilenstein:** GitHub Actions für Tests und Docker-Image-Build (PR #4 und #5)
 
 ## 1. Projektziel und Lernansatz
@@ -98,7 +98,30 @@ Der einmalige Testcontainer wird durch `--rm` entfernt. Der PostgreSQL-Testconta
 - Maven-Ergebnis: `BUILD SUCCESS`.
 - Nach dem Testlauf wurde `postgres-test` erfolgreich gestoppt.
 
-Diese Ergebnisse beziehen sich auf den dokumentierten Lauf. Ein automatisierter Testlauf nach absichtlich provoziertem Testfehler steht noch aus.
+Diese Ergebnisse beziehen sich auf den dokumentierten Lauf.
+
+### 6.1 Fehlerbehandlung und Cleanup verifizieren
+
+Neben dem regulären Testlauf wurde die Fehlerbehandlung von `scripts/test.sh` kontrolliert geprüft.
+
+**Erfolgsfall**
+- 18 Tests wurden ausgeführt.
+- Es gab 0 Fehler, 0 fehlgeschlagene Tests und 0 übersprungene Tests.
+- Maven meldete `BUILD SUCCESS`.
+- Die Testdatenbank `postgres-test` wurde anschließend gestoppt.
+
+**Kontrollierter Fehlerfall**
+- Ein temporärer Docker-Compose-Override ließ den Testcontainer absichtlich mit Exitcode `42` abbrechen.
+- Das Skript gab diesen Exitcode weiter und führte seinen Cleanup-Handler aus.
+- Die Testdatenbank `postgres-test` wurde gestoppt.
+
+Damit sind die reguläre Ausführung und die grundlegende Fehlerbehandlung des Skripts lokal verifiziert. Der Fehlerfall war eine kontrollierte Shell-Simulation und kein fehlgeschlagener Maven-Test.
+
+**Lernpunkte**
+- Ein Shell-Skript muss Fehlercodes zuverlässig weitergeben.
+- Ein `trap` mit `EXIT` kann Cleanup auch nach einem Fehler ausführen.
+- Testinfrastruktur sollte unabhängig von der Entwicklungsdatenbank behandelt werden.
+- Ein erfolgreicher Testlauf und ein kontrollierter Fehlerfall prüfen unterschiedliche Eigenschaften.
 
 ## 7. Validierung der API
 
