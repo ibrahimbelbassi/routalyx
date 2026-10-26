@@ -8,11 +8,10 @@
 
 ### Git-Stand
 
-- `main` wurde mit `origin/main` synchronisiert.
-- Aktueller Stand: `f4aa37d` – Merge von PR #5 (`feat/ci-docker-build`).
-- PR #4 integrierte die GitHub-Actions-Testpipeline.
-- PR #5 ergänzte den automatisierten Docker-Image-Build.
-- Die Dokumentationsänderungen werden separat auf diesem Branch vorbereitet.
+- Hauptbranch: `main`, zuletzt bestätigter Stand `6a7dc20` nach dem Merge von PR #6.
+- Aktueller Arbeitsbranch: `test/verify-test-script-cleanup`.
+- Die Verifikation der Fehlerbehandlung wird auf einem separaten Feature-Branch dokumentiert.
+- Änderungen werden vor dem Commit mit `git diff` und `git diff --check` geprüft.
 
 ### Umgesetzte Meilensteine
 
@@ -51,7 +50,30 @@
 - Der GitHub-Actions-Lauf für PR #5 war laut bestätigtem Ergebnis ebenfalls erfolgreich.
 - Der lokale Docker-Image-Build wurde erfolgreich abgeschlossen.
 - `git diff --check` meldete bei der Vorbereitung des CI-Image-Builds keine Fehler.
-- Lokales `main` wurde per Fast-Forward mit `origin/main` synchronisiert und steht auf `f4aa37d`.
+- Historischer Stand: `main` wurde nach PR #5 auf `f4aa37d` synchronisiert; anschließend wurde PR #6 gemergt.
+
+### Verifikation der Fehlerbehandlung des Testskripts – 26. Oktober 2026
+
+**Erfolgreicher Testlauf**
+- `./scripts/test.sh` wurde regulär ausgeführt.
+- Ergebnis: 18 Tests, 0 Fehler, 0 fehlgeschlagene Tests, 0 übersprungene Tests.
+- Maven meldete `BUILD SUCCESS`.
+- Das Skript stoppte die Testdatenbank `postgres-test` nach dem Testlauf.
+
+**Kontrollierter Fehlerfall**
+- Ein temporärer Docker-Compose-Override ersetzte den Testbefehl durch einen Shell-Befehl, der absichtlich mit Exitcode `42` endete.
+- `./scripts/test.sh` gab den Fehler-Exitcode `42` zurück.
+- Der Cleanup-Handler wurde ausgeführt und stoppte `postgres-test`.
+- Die Simulation prüfte die Fehlerbehandlung des Skripts. Sie war kein echter fehlgeschlagener Maven-Test.
+- Java-Code und `scripts/test.sh` wurden für diese Simulation nicht verändert.
+
+**Beobachtete Warnungen**
+- Flyway: HTTP `401` beim Abruf zusätzlicher Metadaten; der Build war dennoch erfolgreich.
+- Mockito: Warnung zur dynamischen Agent-Ladung.
+- Spring Boot: Hinweis, dass `spring.jpa.open-in-view` aktiviert ist.
+
+**Bewertung**
+Der reguläre Erfolgsfall und der kontrollierte Fehlerfall wurden lokal verifiziert. Die Ursache der Flyway-Warnung und die Bewertung der Mockito- und Spring-Warnungen bleiben separate offene Prüfungen.
 
 ### Noch offen
 
