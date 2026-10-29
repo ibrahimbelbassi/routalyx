@@ -78,7 +78,7 @@ class VehicleApiIntegrationTest {
 
         mockMvc.perform(get("/api/v1/vehicles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.id == '" + id + "')]").isNotEmpty());
+                .andExpect(jsonPath("$.content[?(@.id == '" + id + "')]").isNotEmpty());
 
         mockMvc.perform(delete("/api/v1/vehicles/{id}", id))
                 .andExpect(status().isNoContent());
@@ -187,6 +187,77 @@ class VehicleApiIntegrationTest {
 
         mockMvc.perform(delete("/api/v1/vehicles/{id}", unknownId))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnVehiclesWithPaginationMetadata() throws Exception {
+        createVehicle(VehicleStatus.AVAILABLE);
+        createVehicle(VehicleStatus.ASSIGNED);
+        createVehicle(VehicleStatus.IN_MAINTENANCE);
+
+        mockMvc.perform(get("/api/v1/vehicles")
+                        .param("page", "0")
+                        .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    void shouldFilterVehiclesByStatus() throws Exception {
+        createVehicle(VehicleStatus.AVAILABLE);
+        createVehicle(VehicleStatus.IN_MAINTENANCE);
+
+        mockMvc.perform(get("/api/v1/vehicles")
+                        .param("status", "AVAILABLE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].status").value("AVAILABLE"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void shouldRejectNegativePage() throws Exception {
+        mockMvc.perform(get("/api/v1/vehicles")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void shouldRejectPageSizeAboveLimit() throws Exception {
+        mockMvc.perform(get("/api/v1/vehicles")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void shouldRejectUnknownVehicleStatus() throws Exception {
+        mockMvc.perform(get("/api/v1/vehicles")
+                        .param("status", "UNKNOWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(
+                        "Invalid value for parameter: status"
+                ));
+    }
+
+    private void createVehicle(VehicleStatus status) throws Exception {
+        VehicleRequest request = new VehicleRequest(
+                uniqueLicensePlate(),
+                status,
+                false
+        );
+
+        mockMvc.perform(post("/api/v1/vehicles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
     }
 
     private String uniqueLicensePlate() {

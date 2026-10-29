@@ -95,3 +95,31 @@ Der reguläre Erfolgsfall und der kontrollierte Fehlerfall wurden lokal verifizi
 ### Nächster Schritt
 
 Die vorbereiteten Dokumentationsänderungen abschließend prüfen, committen und über einen Pull Request in `main` integrieren.
+
+### 29. Oktober 2026 – Vehicle API 2.0
+
+**Branch:** `feat/vehicle-list-pagination`
+
+#### Änderungen
+
+- Fahrzeugliste um Pagination mit `page` und `size` erweitert.
+- Optionalen Statusfilter ergänzt.
+- Paginierte Antwort mit Metadaten über `VehiclePageResponse` eingeführt.
+- Ungültige typisierte Request-Parameter werden kontrolliert mit HTTP 400 beantwortet.
+- Controller- und Integrationstests an das neue Antwortformat angepasst.
+
+#### Verifikation
+
+- `git diff --check`: ohne gemeldete Fehler.
+- `./scripts/test.sh`: 23 Tests, 0 Fehler, 0 Fehlschläge, 0 übersprungene Tests.
+- Maven meldete `BUILD SUCCESS`.
+- `postgres-test` wurde nach dem Testlauf gestoppt.
+
+#### Offen
+
+- Vollständigen Diff prüfen, insbesondere neue und untracked Dateien.
+- Git-Stand und Lerndokumentation abschließend kontrollieren.
+- Änderungen nach erfolgreicher Prüfung committen.
+- Flyway-, Mockito- und `spring.jpa.open-in-view`-Warnungen separat untersuchen.
+
+**Status:** Lokal umgesetzt und getestet; noch nicht committed, gepusht oder gemergt.

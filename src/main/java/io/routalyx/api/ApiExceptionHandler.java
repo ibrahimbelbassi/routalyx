@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Map;
 
@@ -52,5 +53,16 @@ public class ApiExceptionHandler {
 
         return ResponseEntity.status(status)
                 .body(Map.of("error", message));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception
+    ) {
+        return ResponseEntity.badRequest()
+                .body(Map.of(
+                        "error",
+                        "Invalid value for parameter: " + exception.getName()
+                ));
     }
 }
