@@ -266,7 +266,6 @@ class VehicleApiIntegrationTest {
                 .andExpect(jsonPath("$.errors.licensePlate").exists())
                 .andExpect(jsonPath("$.errors.status").exists())
                 .andExpect(jsonPath("$.errors.licensePlate").exists())
-                .andExpect(jsonPath("$.errors.status").exists())
                 .andExpect(jsonPath("$.instance").value("/api/v1/vehicles"));
     }
 
