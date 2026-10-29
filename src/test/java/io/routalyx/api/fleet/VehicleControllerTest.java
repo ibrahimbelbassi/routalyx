@@ -29,6 +29,7 @@ class VehicleControllerTest {
     @MockitoBean
     private VehicleService vehicleService;
 
+
     @Test
     void shouldReturnAllVehicles() throws Exception {
         UUID vehicleId = UUID.fromString(
@@ -38,26 +39,40 @@ class VehicleControllerTest {
         OffsetDateTime createdAt =
                 OffsetDateTime.parse("2026-10-17T22:56:00Z");
 
-        given(vehicleService.getAllVehicles()).willReturn(List.of(
-                new VehicleResponse(
+        VehiclePageResponse response = new VehiclePageResponse(
+                List.of(new VehicleResponse(
                         vehicleId,
                         "DBTEST-001",
                         VehicleStatus.AVAILABLE,
                         false,
                         createdAt
-                )
-        ));
+                )),
+                0,
+                20,
+                1,
+                1,
+                true,
+                true
+        );
+
+        given(vehicleService.getVehicles(null, 0, 20))
+                .willReturn(response);
 
         mockMvc.perform(get("/api/v1/vehicles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
-                .andExpect(jsonPath("$[0].id").value(vehicleId.toString()))
-                .andExpect(jsonPath("$[0].licensePlate").value("DBTEST-001"))
-                .andExpect(jsonPath("$[0].status").value("AVAILABLE"))
-                .andExpect(jsonPath("$[0].activeSafetyIssue").value(false));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(vehicleId.toString()))
+                .andExpect(jsonPath("$.content[0].licensePlate").value("DBTEST-001"))
+                .andExpect(jsonPath("$.content[0].status").value("AVAILABLE"))
+                .andExpect(jsonPath("$.content[0].activeSafetyIssue").value(false))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true));
     }
-
 
     @Test
     void shouldReturnVehicleById() throws Exception {

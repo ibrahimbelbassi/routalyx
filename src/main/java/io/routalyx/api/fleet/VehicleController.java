@@ -1,5 +1,6 @@
 package io.routalyx.api.fleet;
 
+import io.routalyx.fleet.VehicleStatus;
 import io.routalyx.fleet.application.VehicleService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -10,10 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,8 +28,12 @@ public class VehicleController {
     }
 
     @GetMapping
-    public List<VehicleResponse> getAllVehicles() {
-        return vehicleService.getAllVehicles();
+    public VehiclePageResponse getAllVehicles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) VehicleStatus status
+    ) {
+        return vehicleService.getVehicles(status, page, size);
     }
 
     @GetMapping("/{id}")

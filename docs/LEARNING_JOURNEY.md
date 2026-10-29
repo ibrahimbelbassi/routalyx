@@ -1,10 +1,10 @@
 # Routalyx – Learning Journey
 
-**Stand:** 26. Oktober 2026
+**Stand:** 29. Oktober 2026
 **Projekt:** Routalyx – Flottenmanagement und Analytics
-**Aktueller Entwicklungsbranch:** `test/verify-test-script-cleanup`
-**Aktueller Hauptbranch:** `main` – zuletzt bestätigter Commit `6a7dc20`
-**Letzter Meilenstein:** GitHub Actions für Tests und Docker-Image-Build (PR #4 und #5)
+**Aktueller Entwicklungsbranch:** `feat/vehicle-list-pagination`
+**Aktueller Hauptbranch:** `main` – zuletzt bestätigter Commit `a1b7500`
+**Letzter Meilenstein:** Vehicle API 2.0 – Pagination und Statusfilter
 
 ## 1. Projektziel und Lernansatz
 
@@ -280,3 +280,69 @@ GitHub Actions verwendet hierfür Runner mit eigener Laufzeitumgebung. Ein auf d
 ### Nächster Schritt
 
 Die Dokumentationsänderungen abschließend prüfen und über einen separaten Commit und Pull Request in `main` integrieren. Danach den nächsten technischen Meilenstein anhand des tatsächlichen Projektstands festlegen.
+
+## 12. Vehicle API 2.0 – Pagination und Statusfilter
+
+**Stand: 29. Oktober 2026**
+
+### Ziel
+
+Die Fahrzeugliste soll auch bei wachsenden Datenmengen kontrolliert
+abgerufen werden können. Die API unterstützt dafür Pagination und
+einen optionalen Filter nach Fahrzeugstatus.
+
+### Umsetzung
+
+- `VehicleController` nimmt `page`, `size` und `status` als
+  HTTP-Request-Parameter entgegen.
+- `VehicleService` validiert die Seitennummer und Seitengröße.
+  Zulässig sind Seitennummern ab 0 und Seitengrößen von 1 bis 100.
+- `VehicleRepository` verwendet Spring Data JPA für paginierte
+  Datenbankabfragen und die Filterung nach Status.
+- Die Sortierung erfolgt nach Kennzeichen und anschließend nach ID.
+- `VehiclePageResponse` liefert die Fahrzeugliste unter `content`
+  sowie Seitennummer, Seitengröße, Gesamtanzahl, Seitenanzahl und
+  Kennzeichen für die erste und letzte Seite.
+- `ApiExceptionHandler` behandelt ungültige typisierte
+  Request-Parameter mit einer HTTP-400-Antwort.
+
+### API-Vertrag
+
+Beispiel für eine Anfrage:
+
+`GET /api/v1/vehicles?page=0&size=20&status=AVAILABLE`
+
+Die Antwort enthält unter anderem `content`, `page`, `size`,
+`totalElements`, `totalPages`, `first` und `last`.
+
+### Verifikation
+
+Am 29. Oktober 2026 wurde `./scripts/test.sh` ausgeführt.
+
+- `git diff --check`: keine Fehler gemeldet.
+- Maven-Testlauf: 23 Tests, 0 Fehler, 0 Fehlschläge,
+  0 übersprungene Tests.
+- Maven-Ergebnis: `BUILD SUCCESS`.
+- Die Testdatenbank `postgres-test` wurde anschließend gestoppt.
+
+Die Ergebnisse gelten für diesen konkreten lokalen Testlauf.
+Der Feature-Branch ist damit noch nicht automatisch gemergt oder deployed.
+
+### Lernpunkte
+
+- Spring Data `Page` und `Pageable` ermöglichen Datenbankabfragen
+  mit Seitennavigation und Gesamtmetadaten.
+- Eine stabile Sortierung ist wichtig, damit Datensätze bei
+  aufeinanderfolgenden Seiten möglichst konsistent verteilt werden.
+- Ein HTTP-Response-Record definiert den JSON-Vertrag der API.
+- Integrationstests prüfen das Verhalten über die HTTP-Schnittstelle.
+- Ungültige Query-Parameter müssen kontrolliert und verständlich
+  beantwortet werden.
+
+### Offene Punkte
+
+- Den vollständigen Git-Diff einschließlich neuer Dateien prüfen.
+- Die Dokumentation und den aktuellen Branch-Stand synchronisieren.
+- Die Warnungen zu Flyway-Metadaten, Mockito und
+  `spring.jpa.open-in-view` separat bewerten.
+- Nach abschließender Prüfung einen Commit erstellen.
