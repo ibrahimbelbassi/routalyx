@@ -123,3 +123,32 @@ Die vorbereiteten Dokumentationsänderungen abschließend prüfen, committen und
 - Flyway-, Mockito- und `spring.jpa.open-in-view`-Warnungen separat untersuchen.
 
 **Status:** Lokal umgesetzt und getestet; noch nicht committed, gepusht oder gemergt.
+
+### 30. Oktober 2026 – OpenAPI-Dokumentation
+
+**Branch:** `feat/openapi-documentation`
+
+#### Änderungen
+
+- Springdoc OpenAPI und Swagger UI integriert.
+- API-Metadaten in `OpenApiConfig.java` konfiguriert.
+- Fünf Vehicle-Endpunkte mit Zusammenfassungen und HTTP-Antworten
+  dokumentiert.
+- Request-Bodies für POST und PUT in der generierten Spezifikation
+  nachgewiesen.
+
+#### Verifikation
+
+- Docker-Neubau und Anwendungsstart erfolgreich.
+- OpenAPI-Spezifikation über `/v3/api-docs` geprüft.
+- `./scripts/test.sh`: 23 Tests, 0 Fehler, 0 Fehlschläge,
+  0 übersprungene Tests.
+- `git diff --check`: keine Fehler gemeldet.
+- Commit `313f5a4` erstellt.
+- PR #9 erfolgreich in `main` integriert.
+- Lokaler Hauptbranch auf Merge-Commit `3fadfcb` synchronisiert.
+
+#### Status
+
+Umgesetzt, getestet, committed, gepusht und gemergt.
+Ein produktives Deployment ist damit nicht verbunden.

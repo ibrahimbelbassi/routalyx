@@ -1,10 +1,10 @@
 # Routalyx – Learning Journey
 
-**Stand:** 29. Oktober 2026
+**Stand:** 30. Oktober 2026
 **Projekt:** Routalyx – Flottenmanagement und Analytics
-**Aktueller Entwicklungsbranch:** `feat/vehicle-list-pagination`
-**Aktueller Hauptbranch:** `main` – zuletzt bestätigter Commit `a1b7500`
-**Letzter Meilenstein:** Vehicle API 2.0 – Pagination und Statusfilter
+**Aktueller Entwicklungsbranch:** `docs/update-openapi-learning-record`
+**Aktueller Hauptbranch:** `main` – Commit `3fadfcb`
+**Letzter Meilenstein:** OpenAPI-Dokumentation für die Vehicle API
 
 ## 1. Projektziel und Lernansatz
 
@@ -346,3 +346,50 @@ Der Feature-Branch ist damit noch nicht automatisch gemergt oder deployed.
 - Die Warnungen zu Flyway-Metadaten, Mockito und
   `spring.jpa.open-in-view` separat bewerten.
 - Nach abschließender Prüfung einen Commit erstellen.
+
+## 13. OpenAPI-Dokumentation – 30. Oktober 2026
+
+### Ziel
+
+Die REST API soll über eine maschinenlesbare OpenAPI-Spezifikation
+und eine interaktive Swagger UI nachvollziehbar dokumentiert werden.
+
+### Umsetzung
+
+- Springdoc-Abhängigkeit `springdoc-openapi-starter-webmvc-ui`
+  in Version `3.0.3` hinzugefügt.
+- `OpenApiConfig` definiert Titel, Beschreibung und Version der API.
+- `VehicleController` dokumentiert die fünf Fahrzeug-Endpunkte
+  mit `@Operation`, `@Parameter`, `@Tag` und `@ApiResponses`.
+- OpenAPI-Spezifikation über `/v3/api-docs` geprüft.
+- Swagger UI über `/swagger-ui/index.html` aufgerufen.
+
+### Verifikation
+
+- Docker-Image erfolgreich neu gebaut.
+- Spring Boot 4.0.8 mit Java 21 gestartet.
+- PostgreSQL 17.11 verbunden; Flyway meldete Schema-Version 1 als aktuell.
+- `./scripts/test.sh`: 23 Tests, 0 Fehler, 0 Fehlschläge,
+  0 übersprungene Tests; Maven meldete `BUILD SUCCESS`.
+- Die fünf Vehicle-Endpunkte wurden in der generierten
+  OpenAPI-Spezifikation mit ihren dokumentierten Antworten geprüft.
+- PR #9 wurde in `main` integriert.
+- Merge-Commit: `3fadfcb`.
+- Feature-Commit: `313f5a4`.
+
+### Lernpunkte
+
+- OpenAPI beschreibt den Vertrag einer REST API maschinenlesbar.
+- Springdoc erzeugt die Spezifikation aus Spring-Controllern
+  und deren Annotationen.
+- Swagger UI stellt die Spezifikation interaktiv dar.
+- Ein erfolgreicher Java-Testlauf allein bestätigt nicht,
+  dass die tatsächlich laufende Docker-Anwendung den neuesten
+  Quellcode verwendet. Deshalb wurden Image-Neubau und Laufzeit
+  separat geprüft.
+
+### Abgrenzung
+
+Die OpenAPI-Dokumentation wurde lokal und über den gemergten
+Git-Stand verifiziert. Ein produktives Deployment wurde dadurch
+nicht nachgewiesen.
