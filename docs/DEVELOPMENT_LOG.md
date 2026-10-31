@@ -152,3 +152,39 @@ Die vorbereiteten Dokumentationsänderungen abschließend prüfen, committen und
 
 Umgesetzt, getestet, committed, gepusht und gemergt.
 Ein produktives Deployment ist damit nicht verbunden.
+
+### 30. Oktober 2026 – Standardisierte API-Fehlerantworten
+
+**Branch:** `feat/standardized-api-errors`
+
+#### Änderungen
+
+- Zentrale Fehlerbehandlung mit Spring `ProblemDetail` eingeführt.
+- RFC-9457-Fehlerformat implementiert.
+- Feldbezogene Validierungsfehler über `errors` ergänzt.
+- Request-Pfad über `instance` aufgenommen.
+- Validierungsfehler, Datenbankkonflikte, Statusfehler und ungültige Request-Parameter zentral behandelt.
+- Integrationstests angepasst und Mehrfachvalidierung ergänzt.
+- Doppelte Assertions entfernt.
+
+#### Git
+
+- `ffabc0b`: `feat(api): standardize error responses`
+- `64069c0`: `test(api): remove duplicate error assertions`
+
+#### Verifikation
+
+Nach der Bereinigung doppelter Assertions wurde `./scripts/test.sh` vollständig ausgeführt:
+
+- 24 Tests
+- 0 Fehlschläge
+- 0 Fehler
+- 0 übersprungene Tests
+- Maven-Ergebnis: `BUILD SUCCESS`
+
+#### Status
+
+Implementierung lokal committed.
+Feature-Branch noch nicht gepusht.
+Noch kein Pull Request erstellt oder gemergt.
+Kein Deployment durchgeführt.

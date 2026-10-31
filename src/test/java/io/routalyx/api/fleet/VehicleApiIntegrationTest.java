@@ -106,7 +106,7 @@ class VehicleApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").exists());
+                .andExpect(jsonPath("$.detail").exists());
     }
 
     @Test
@@ -123,7 +123,7 @@ class VehicleApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidRequest))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
+                .andExpect(jsonPath("$.errors.licensePlate").exists());
     }
 
     @Test
@@ -226,7 +226,7 @@ class VehicleApiIntegrationTest {
         mockMvc.perform(get("/api/v1/vehicles")
                         .param("page", "-1"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
+                .andExpect(jsonPath("$.detail").exists());
     }
 
     @Test
@@ -234,7 +234,7 @@ class VehicleApiIntegrationTest {
         mockMvc.perform(get("/api/v1/vehicles")
                         .param("size", "101"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
+                .andExpect(jsonPath("$.detail").exists());
     }
 
     @Test
@@ -242,9 +242,31 @@ class VehicleApiIntegrationTest {
         mockMvc.perform(get("/api/v1/vehicles")
                         .param("status", "UNKNOWN"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value(
+                .andExpect(jsonPath("$.detail").value(
                         "Invalid value for parameter: status"
                 ));
+    }
+
+    @Test
+    void shouldReturnAllValidationErrors() throws Exception {
+        String invalidRequest = """
+            {
+              "licensePlate": " ",
+              "status": null,
+              "activeSafetyIssue": false
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/vehicles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail")
+                        .value("One or more fields are invalid"))
+                .andExpect(jsonPath("$.errors.licensePlate").exists())
+                .andExpect(jsonPath("$.errors.status").exists())
+                .andExpect(jsonPath("$.errors.licensePlate").exists())
+                .andExpect(jsonPath("$.instance").value("/api/v1/vehicles"));
     }
 
     private void createVehicle(VehicleStatus status) throws Exception {

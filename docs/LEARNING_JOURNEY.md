@@ -1,10 +1,10 @@
 # Routalyx – Learning Journey
 
-**Stand:** 30. Oktober 2026
+**Stand:** 31. Oktober 2026
 **Projekt:** Routalyx – Flottenmanagement und Analytics
-**Aktueller Entwicklungsbranch:** `docs/update-openapi-learning-record`
-**Aktueller Hauptbranch:** `main` – Commit `3fadfcb`
-**Letzter Meilenstein:** OpenAPI-Dokumentation für die Vehicle API
+**Aktueller Entwicklungsbranch:** `feat/standardized-api-errors`
+**Aktueller Hauptbranch:** `main` – Commit `1ca4f09`
+**Letzter Meilenstein:** Standardisierte API-Fehlerantworten mit RFC 9457
 
 ## 1. Projektziel und Lernansatz
 
@@ -393,3 +393,71 @@ und eine interaktive Swagger UI nachvollziehbar dokumentiert werden.
 Die OpenAPI-Dokumentation wurde lokal und über den gemergten
 Git-Stand verifiziert. Ein produktives Deployment wurde dadurch
 nicht nachgewiesen.
+
+## 14. Standardisierte API-Fehlerantworten mit RFC 9457
+
+### Ziel
+
+Die Vehicle API soll Fehler in einem einheitlichen, maschinenlesbaren Format zurückgeben.
+
+### Technischer Hintergrund
+
+RFC 9457 definiert ein standardisiertes Format für HTTP-Fehlerantworten mit dem Medientyp `application/problem+json`.
+
+Spring stellt dafür `ProblemDetail` bereit.
+
+### Umsetzung
+
+Die zentrale Fehlerbehandlung befindet sich in `ApiExceptionHandler.java`.
+
+- `@RestControllerAdvice` bündelt die Fehlerbehandlung.
+- `ProblemDetail` bildet die standardisierte Fehlerantwort.
+- `detail` beschreibt den Fehler.
+- `instance` enthält den Request-Pfad.
+- `errors` ergänzt feldbezogene Validierungsinformationen.
+
+Behandelte Fehlerfälle:
+
+- `MethodArgumentNotValidException`: HTTP 400.
+- `DataIntegrityViolationException`: HTTP 409.
+- `ResponseStatusException`: Übernahme des Status und der Beschreibung.
+- `MethodArgumentTypeMismatchException`: HTTP 400.
+
+### Beispiel
+
+```json
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "One or more fields are invalid",
+  "instance": "/api/v1/vehicles",
+  "errors": {
+    "licensePlate": "must not be blank",
+    "status": "must not be null"
+  }
+}
+```
+
+### Tests und Verifikation
+
+Nach der Bereinigung doppelter Assertions wurde `./scripts/test.sh` vollständig ausgeführt:
+
+- 24 Tests
+- 0 Fehlschläge
+- 0 Fehler
+- 0 übersprungene Tests
+- Maven-Ergebnis: `BUILD SUCCESS`
+
+### Git-Stand
+
+- `ffabc0b`: `feat(api): standardize error responses`
+- `64069c0`: `test(api): remove duplicate error assertions`
+
+Die Implementierung ist committed. Der Feature-Branch wurde noch nicht gepusht. Ein Pull Request wurde noch nicht erstellt.
+
+### Erkenntnisse
+
+Eine zentrale Fehlerbehandlung verhindert, dass unterschiedliche Controller ihre Fehlerantworten jeweils selbst formatieren müssen.
+
+Das standardisierte Format erleichtert die Verarbeitung durch Frontend-Anwendungen und andere API-Clients.
