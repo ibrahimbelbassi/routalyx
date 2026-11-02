@@ -1,19 +1,18 @@
 package io.routalyx.fleet.application;
 
-import io.routalyx.api.fleet.VehiclePageResponse;
-import io.routalyx.api.fleet.VehicleRequest;
-import io.routalyx.api.fleet.VehicleResponse;
 import io.routalyx.fleet.VehicleStatus;
 import io.routalyx.fleet.persistence.VehicleEntity;
 import io.routalyx.fleet.persistence.VehicleRepository;
+import io.routalyx.fleet.application.exception.DuplicateLicensePlateException;
+import io.routalyx.fleet.application.exception.InvalidVehicleQueryException;
+import io.routalyx.fleet.application.exception.VehicleNotFoundException;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -27,73 +26,68 @@ public class VehicleService {
         this.vehicleRepository = vehicleRepository;
     }
 
-    public VehicleResponse getVehicleById(UUID id) {
+    public VehicleResult getVehicleById(UUID id) {
         return vehicleRepository.findById(id)
-                .map(this::toResponse)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
+                .map(this::toResult)
+                .orElseThrow(() -> new VehicleNotFoundException(
                         "Vehicle not found"
                 ));
     }
 
     @Transactional
-    public VehicleResponse createVehicle(VehicleRequest request) {
-        if (vehicleRepository.existsByLicensePlate(request.licensePlate())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
+    public VehicleResult createVehicle(VehicleCommand command) {
+        if (vehicleRepository.existsByLicensePlate(command.licensePlate())) {
+            throw new DuplicateLicensePlateException(
                     "A vehicle with this license plate already exists"
             );
         }
 
         VehicleEntity entity = new VehicleEntity(
                 UUID.randomUUID(),
-                request.licensePlate(),
-                request.status(),
-                request.activeSafetyIssue()
+                command.licensePlate(),
+                command.status(),
+                command.activeSafetyIssue()
         );
 
-        return toResponse(vehicleRepository.save(entity));
+        return toResult(vehicleRepository.save(entity));
     }
 
     @Transactional
-    public VehicleResponse updateVehicle(UUID id, VehicleRequest request) {
+    public VehicleResult updateVehicle(UUID id, VehicleCommand command) {
         VehicleEntity entity = vehicleRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new VehicleNotFoundException(
                         "Vehicle not found"
                 ));
 
-        vehicleRepository.findByLicensePlate(request.licensePlate())
+        vehicleRepository.findByLicensePlate(command.licensePlate())
                 .filter(existing -> !existing.getId().equals(id))
                 .ifPresent(existing -> {
-                    throw new ResponseStatusException(
-                            HttpStatus.CONFLICT,
+                    throw new DuplicateLicensePlateException(
                             "A vehicle with this license plate already exists"
                     );
                 });
 
         entity.update(
-                request.licensePlate(),
-                request.status(),
-                request.activeSafetyIssue()
+                command.licensePlate(),
+                command.status(),
+                command.activeSafetyIssue()
         );
 
-        return toResponse(vehicleRepository.save(entity));
+        return toResult(vehicleRepository.save(entity));
     }
 
     @Transactional
     public void deleteVehicle(UUID id) {
         VehicleEntity entity = vehicleRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new VehicleNotFoundException(
                         "Vehicle not found"
                 ));
 
         vehicleRepository.delete(entity);
     }
 
-    private VehicleResponse toResponse(VehicleEntity entity) {
-        return new VehicleResponse(
+    private VehicleResult toResult(VehicleEntity entity) {
+        return new VehicleResult(
                 entity.getId(),
                 entity.getLicensePlate(),
                 entity.getStatus(),
@@ -102,21 +96,19 @@ public class VehicleService {
         );
     }
 
-    public VehiclePageResponse getVehicles(
+    public VehiclePageResult getVehicles(
             VehicleStatus status,
             int page,
             int size
     ) {
         if (page < 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+            throw new InvalidVehicleQueryException(
                     "Page must be greater than or equal to 0"
             );
         }
 
         if (size < 1 || size > 100) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+            throw new InvalidVehicleQueryException(
                     "Size must be between 1 and 100"
             );
         }
@@ -134,10 +126,10 @@ public class VehicleService {
                 ? vehicleRepository.findAll(pageable)
                 : vehicleRepository.findByStatus(status, pageable);
 
-        return new VehiclePageResponse(
+        return new VehiclePageResult(
                 vehiclePage.getContent()
                         .stream()
-                        .map(this::toResponse)
+                        .map(this::toResult)
                         .toList(),
                 vehiclePage.getNumber(),
                 vehiclePage.getSize(),

@@ -1,6 +1,9 @@
 package io.routalyx.api;
 
-import jakarta.servlet.http.HttpServletRequest;
+import io.routalyx.fleet.application.exception.DuplicateLicensePlateException;
+import io.routalyx.fleet.application.exception.InvalidVehicleQueryException;
+import io.routalyx.fleet.application.exception.VehicleNotFoundException;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -8,9 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.TreeMap;
 
@@ -60,24 +64,46 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
 
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ProblemDetail> handleResponseStatusException(
-            ResponseStatusException exception,
+    @ExceptionHandler(VehicleNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleVehicleNotFound(
+            VehicleNotFoundException exception,
             HttpServletRequest request
     ) {
-        HttpStatusCode status = exception.getStatusCode();
-
-        String message = exception.getReason() != null
-                ? exception.getReason()
-                : "Request could not be processed";
-
         ProblemDetail problem = createProblem(
-                status,
-                message,
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
                 request
         );
 
-        return ResponseEntity.status(status).body(problem);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+
+    @ExceptionHandler(DuplicateLicensePlateException.class)
+    public ResponseEntity<ProblemDetail> handleDuplicateLicensePlate(
+            DuplicateLicensePlateException exception,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+    }
+
+    @ExceptionHandler(InvalidVehicleQueryException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidVehicleQuery(
+            InvalidVehicleQueryException exception,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request
+        );
+
+        return ResponseEntity.badRequest().body(problem);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

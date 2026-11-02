@@ -1,7 +1,10 @@
 package io.routalyx.api.fleet;
 
 import io.routalyx.fleet.VehicleStatus;
+import io.routalyx.fleet.application.VehiclePageResult;
+import io.routalyx.fleet.application.VehicleResult;
 import io.routalyx.fleet.application.VehicleService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -10,15 +13,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.UUID;
-
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @WebMvcTest(VehicleController.class)
 class VehicleControllerTest {
@@ -39,8 +42,8 @@ class VehicleControllerTest {
         OffsetDateTime createdAt =
                 OffsetDateTime.parse("2026-10-17T22:56:00Z");
 
-        VehiclePageResponse response = new VehiclePageResponse(
-                List.of(new VehicleResponse(
+        VehiclePageResult result = new VehiclePageResult(
+                List.of(new VehicleResult(
                         vehicleId,
                         "DBTEST-001",
                         VehicleStatus.AVAILABLE,
@@ -56,7 +59,7 @@ class VehicleControllerTest {
         );
 
         given(vehicleService.getVehicles(null, 0, 20))
-                .willReturn(response);
+                .willReturn(result);
 
         mockMvc.perform(get("/api/v1/vehicles"))
                 .andExpect(status().isOk())
@@ -83,7 +86,7 @@ class VehicleControllerTest {
         OffsetDateTime createdAt =
                 OffsetDateTime.parse("2026-10-17T22:56:00Z");
 
-        VehicleResponse response = new VehicleResponse(
+        VehicleResult result = new VehicleResult(
                 vehicleId,
                 "DBTEST-001",
                 VehicleStatus.AVAILABLE,
@@ -92,7 +95,7 @@ class VehicleControllerTest {
         );
 
         given(vehicleService.getVehicleById(vehicleId))
-                .willReturn(response);
+                .willReturn(result);
 
         mockMvc.perform(get("/api/v1/vehicles/{id}", vehicleId))
                 .andExpect(status().isOk())
