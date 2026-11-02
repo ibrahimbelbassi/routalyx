@@ -188,3 +188,41 @@ Implementierung lokal committed.
 Feature-Branch noch nicht gepusht.
 Noch kein Pull Request erstellt oder gemergt.
 Kein Deployment durchgeführt.
+
+### 2. November 2026 – Vehicle Application Boundary Refactoring
+
+**Feature-Branch:** `refactor/vehicle-application-boundary`
+
+#### Änderungen
+
+- API-Modelle von der Application-Schicht getrennt.
+- `VehicleCommand`, `VehicleResult` und `VehiclePageResult` eingeführt.
+- Mapping zwischen API- und Application-Modellen in den Controller verlagert.
+- Application-Exceptions für Fahrzeugfehler eingeführt.
+- `VehicleService` verwendet keine API-Modelle mehr.
+
+#### Git
+
+- Feature-Commit: `6802fce`
+- PR #12 erfolgreich in `main` integriert.
+- Merge-Commit: `9438482`
+- `main` mit `origin/main` synchronisiert.
+
+#### Verifikation
+
+- `./scripts/test.sh`: 24 Tests.
+- 0 Fehler, 0 Fehlschläge.
+- Maven: `BUILD SUCCESS`.
+- Arbeitsverzeichnis auf `main` zuletzt sauber bestätigt.
+
+#### Architekturstatus
+
+Die Application-Schicht ist von API-Modellen entkoppelt.
+Die Abhängigkeit von Spring Data JPA und Persistence-Typen besteht weiterhin.
+
+Kein produktives Deployment bestätigt.
+
+#### Nächster Schritt
+
+Prüfen, ob ein Repository-Port die Application-Schicht sinnvoll
+von Spring Data JPA entkoppeln kann.

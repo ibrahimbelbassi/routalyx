@@ -461,3 +461,58 @@ Die Implementierung ist committed. Der Feature-Branch wurde noch nicht gepusht. 
 Eine zentrale Fehlerbehandlung verhindert, dass unterschiedliche Controller ihre Fehlerantworten jeweils selbst formatieren müssen.
 
 Das standardisierte Format erleichtert die Verarbeitung durch Frontend-Anwendungen und andere API-Clients.
+
+## 15. Entkopplung der Application-Schicht von API-Modellen
+
+### Ziel
+
+Die Application-Schicht soll nicht von HTTP-Request- oder Response-Modellen
+der API-Schicht abhängen. Dadurch werden Verantwortlichkeiten klarer
+getrennt und die Geschäftslogik unabhängiger von der REST-Schnittstelle.
+
+### Umsetzung
+
+- `VehicleCommand` repräsentiert Eingaben für die Application-Schicht.
+- `VehicleResult` repräsentiert das Ergebnis eines einzelnen Fahrzeugvorgangs.
+- `VehiclePageResult` repräsentiert paginierte Ergebnisse.
+- `VehicleService` verwendet Application-Modelle statt API-DTOs.
+- `VehicleController` übernimmt die Übersetzung zwischen API-Modellen
+  und Application-Modellen.
+- Application-Exceptions ersetzen HTTP-spezifische Fehlerbehandlung
+  innerhalb des Services:
+  - `VehicleNotFoundException`
+  - `DuplicateLicensePlateException`
+  - `InvalidVehicleQueryException`
+- `ApiExceptionHandler` übersetzt Application-Exceptions in HTTP-Fehler.
+
+### Architekturgrenze
+
+Die API-Schicht ist von der Application-Schicht entkoppelt.
+
+Die Application-Schicht verwendet weiterhin Spring Data JPA und
+Persistence-Typen. Eine vollständige Entkopplung von der Datenbanktechnik
+ist damit noch nicht erreicht.
+
+### Verifikation
+
+- PR #12 wurde in `main` integriert.
+- Merge-Commit: `9438482`.
+- Feature-Commit: `6802fce`.
+- `./scripts/test.sh`: 24 Tests, 0 Fehler, 0 Fehlschläge.
+- Maven meldete `BUILD SUCCESS`.
+- `main` wurde mit `origin/main` synchronisiert.
+- Arbeitsverzeichnis war sauber.
+
+### Lernpunkte
+
+- API-DTOs gehören zur Schnittstellenschicht.
+- Application-Modelle repräsentieren Anwendungsfälle unabhängig vom HTTP-Vertrag.
+- Der Controller ist für die Übersetzung zwischen API und Application zuständig.
+- Eine Schichtentkopplung ist schrittweise möglich.
+- Dependency Inversion gegenüber Persistence ist eine mögliche nächste
+  Architekturverbesserung.
+
+### Abgrenzung
+
+Der Merge und die Tests wurden bestätigt.
+Ein produktives Deployment wurde nicht nachgewiesen.
