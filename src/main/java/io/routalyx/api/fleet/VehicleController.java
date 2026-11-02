@@ -1,8 +1,11 @@
 package io.routalyx.api.fleet;
 
 import io.routalyx.fleet.VehicleStatus;
+import io.routalyx.fleet.application.VehicleCommand;
+import io.routalyx.fleet.application.VehiclePageResult;
+import io.routalyx.fleet.application.VehicleResult;
 import io.routalyx.fleet.application.VehicleService;
-import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +22,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import jakarta.validation.Valid;
 
 import java.net.URI;
 import java.util.UUID;
@@ -57,7 +62,7 @@ public class VehicleController {
             @Parameter(description = "Optional vehicle status filter")
             @RequestParam(required = false) VehicleStatus status
     ) {
-        return vehicleService.getVehicles(status, page, size);
+        return toPageResponse(vehicleService.getVehicles(status, page, size));
     }
 
 
@@ -75,7 +80,7 @@ public class VehicleController {
             @Parameter(description = "UUID of the vehicle", required = true)
             @PathVariable UUID id
     ) {
-        return vehicleService.getVehicleById(id);
+        return toResponse(vehicleService.getVehicleById(id));
     }
 
     @Operation(
@@ -91,7 +96,13 @@ public class VehicleController {
     public ResponseEntity<VehicleResponse> createVehicle(
             @Valid @RequestBody VehicleRequest request
     ) {
-        VehicleResponse createdVehicle = vehicleService.createVehicle(request);
+        VehicleCommand command = new VehicleCommand(
+                request.licensePlate(),
+                request.status(),
+                request.activeSafetyIssue()
+        );
+
+        VehicleResponse createdVehicle = toResponse(vehicleService.createVehicle(command));
 
         URI location = URI.create(
                 "/api/v1/vehicles/" + createdVehicle.id()
@@ -115,7 +126,13 @@ public class VehicleController {
             @PathVariable UUID id,
             @Valid @RequestBody VehicleRequest request
     ) {
-        return vehicleService.updateVehicle(id, request);
+        VehicleCommand command = new VehicleCommand(
+                request.licensePlate(),
+                request.status(),
+                request.activeSafetyIssue()
+        );
+
+        return toResponse(vehicleService.updateVehicle(id, command));
     }
 
     @Operation(
@@ -130,5 +147,29 @@ public class VehicleController {
     public ResponseEntity<Void> deleteVehicle(@PathVariable UUID id) {
         vehicleService.deleteVehicle(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private VehicleResponse toResponse(VehicleResult result) {
+        return new VehicleResponse(
+                result.id(),
+                result.licensePlate(),
+                result.status(),
+                result.activeSafetyIssue(),
+                result.createdAt()
+        );
+    }
+
+    private VehiclePageResponse toPageResponse(VehiclePageResult result) {
+        return new VehiclePageResponse(
+                result.content().stream()
+                        .map(this::toResponse)
+                        .toList(),
+                result.page(),
+                result.size(),
+                result.totalElements(),
+                result.totalPages(),
+                result.first(),
+                result.last()
+        );
     }
 }
