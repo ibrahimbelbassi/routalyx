@@ -1,16 +1,10 @@
 package io.routalyx.fleet.application;
 
 import io.routalyx.fleet.VehicleStatus;
-import io.routalyx.fleet.persistence.VehicleEntity;
-import io.routalyx.fleet.persistence.VehicleRepository;
 import io.routalyx.fleet.application.exception.DuplicateLicensePlateException;
 import io.routalyx.fleet.application.exception.InvalidVehicleQueryException;
 import io.routalyx.fleet.application.exception.VehicleNotFoundException;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +14,14 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class VehicleService {
 
-    private final VehicleRepository vehicleRepository;
+    private final VehicleStore vehicleStore;
 
-    public VehicleService(VehicleRepository vehicleRepository) {
-        this.vehicleRepository = vehicleRepository;
+    public VehicleService(VehicleStore vehicleStore) {
+        this.vehicleStore = vehicleStore;
     }
 
     public VehicleResult getVehicleById(UUID id) {
-        return vehicleRepository.findById(id)
-                .map(this::toResult)
+        return vehicleStore.findById(id)
                 .orElseThrow(() -> new VehicleNotFoundException(
                         "Vehicle not found"
                 ));
@@ -36,64 +29,44 @@ public class VehicleService {
 
     @Transactional
     public VehicleResult createVehicle(VehicleCommand command) {
-        if (vehicleRepository.existsByLicensePlate(command.licensePlate())) {
+        if (vehicleStore.existsByLicensePlate(command.licensePlate())) {
             throw new DuplicateLicensePlateException(
                     "A vehicle with this license plate already exists"
             );
         }
 
-        VehicleEntity entity = new VehicleEntity(
-                UUID.randomUUID(),
-                command.licensePlate(),
-                command.status(),
-                command.activeSafetyIssue()
-        );
-
-        return toResult(vehicleRepository.save(entity));
+        return vehicleStore.createVehicle(command);
     }
 
     @Transactional
     public VehicleResult updateVehicle(UUID id, VehicleCommand command) {
-        VehicleEntity entity = vehicleRepository.findById(id)
+        vehicleStore.findById(id)
                 .orElseThrow(() -> new VehicleNotFoundException(
                         "Vehicle not found"
                 ));
 
-        vehicleRepository.findByLicensePlate(command.licensePlate())
-                .filter(existing -> !existing.getId().equals(id))
+        vehicleStore.findByLicensePlate(command.licensePlate())
+                .filter(existing -> !existing.id().equals(id))
                 .ifPresent(existing -> {
                     throw new DuplicateLicensePlateException(
                             "A vehicle with this license plate already exists"
                     );
                 });
 
-        entity.update(
-                command.licensePlate(),
-                command.status(),
-                command.activeSafetyIssue()
-        );
-
-        return toResult(vehicleRepository.save(entity));
+        return vehicleStore.updateVehicle(id, command)
+                .orElseThrow(() -> new VehicleNotFoundException(
+                        "Vehicle not found"
+                ));
     }
 
     @Transactional
     public void deleteVehicle(UUID id) {
-        VehicleEntity entity = vehicleRepository.findById(id)
+        vehicleStore.findById(id)
                 .orElseThrow(() -> new VehicleNotFoundException(
                         "Vehicle not found"
                 ));
 
-        vehicleRepository.delete(entity);
-    }
-
-    private VehicleResult toResult(VehicleEntity entity) {
-        return new VehicleResult(
-                entity.getId(),
-                entity.getLicensePlate(),
-                entity.getStatus(),
-                entity.isActiveSafetyIssue(),
-                entity.getCreatedAt()
-        );
+        vehicleStore.deleteVehicle(id);
     }
 
     public VehiclePageResult getVehicles(
@@ -113,30 +86,6 @@ public class VehicleService {
             );
         }
 
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(
-                        Sort.Order.asc("licensePlate"),
-                        Sort.Order.asc("id")
-                )
-        );
-
-        Page<VehicleEntity> vehiclePage = status == null
-                ? vehicleRepository.findAll(pageable)
-                : vehicleRepository.findByStatus(status, pageable);
-
-        return new VehiclePageResult(
-                vehiclePage.getContent()
-                        .stream()
-                        .map(this::toResult)
-                        .toList(),
-                vehiclePage.getNumber(),
-                vehiclePage.getSize(),
-                vehiclePage.getTotalElements(),
-                vehiclePage.getTotalPages(),
-                vehiclePage.isFirst(),
-                vehiclePage.isLast()
-        );
+        return vehicleStore.findVehicles(status, page, size);
     }
 }

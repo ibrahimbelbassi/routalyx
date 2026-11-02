@@ -461,3 +461,158 @@ Die Implementierung ist committed. Der Feature-Branch wurde noch nicht gepusht. 
 Eine zentrale Fehlerbehandlung verhindert, dass unterschiedliche Controller ihre Fehlerantworten jeweils selbst formatieren müssen.
 
 Das standardisierte Format erleichtert die Verarbeitung durch Frontend-Anwendungen und andere API-Clients.
+
+## 15. Entkopplung der Application-Schicht von API-Modellen
+
+### Ziel
+
+Die Application-Schicht soll nicht von HTTP-Request- oder Response-Modellen
+der API-Schicht abhängen. Dadurch werden Verantwortlichkeiten klarer
+getrennt und die Geschäftslogik unabhängiger von der REST-Schnittstelle.
+
+### Umsetzung
+
+- `VehicleCommand` repräsentiert Eingaben für die Application-Schicht.
+- `VehicleResult` repräsentiert das Ergebnis eines einzelnen Fahrzeugvorgangs.
+- `VehiclePageResult` repräsentiert paginierte Ergebnisse.
+- `VehicleService` verwendet Application-Modelle statt API-DTOs.
+- `VehicleController` übernimmt die Übersetzung zwischen API-Modellen
+  und Application-Modellen.
+- Application-Exceptions ersetzen HTTP-spezifische Fehlerbehandlung
+  innerhalb des Services:
+  - `VehicleNotFoundException`
+  - `DuplicateLicensePlateException`
+  - `InvalidVehicleQueryException`
+- `ApiExceptionHandler` übersetzt Application-Exceptions in HTTP-Fehler.
+
+### Architekturgrenze
+
+Die API-Schicht ist von der Application-Schicht entkoppelt.
+
+Die Application-Schicht verwendet weiterhin Spring Data JPA und
+Persistence-Typen. Eine vollständige Entkopplung von der Datenbanktechnik
+ist damit noch nicht erreicht.
+
+### Verifikation
+
+- PR #12 wurde in `main` integriert.
+- Merge-Commit: `9438482`.
+- Feature-Commit: `6802fce`.
+- `./scripts/test.sh`: 24 Tests, 0 Fehler, 0 Fehlschläge.
+- Maven meldete `BUILD SUCCESS`.
+- `main` wurde mit `origin/main` synchronisiert.
+- Arbeitsverzeichnis war sauber.
+
+### Lernpunkte
+
+- API-DTOs gehören zur Schnittstellenschicht.
+- Application-Modelle repräsentieren Anwendungsfälle unabhängig vom HTTP-Vertrag.
+- Der Controller ist für die Übersetzung zwischen API und Application zuständig.
+- Eine Schichtentkopplung ist schrittweise möglich.
+- Dependency Inversion gegenüber Persistence ist eine mögliche nächste
+  Architekturverbesserung.
+
+### Abgrenzung
+
+Der Merge und die Tests wurden bestätigt.
+Ein produktives Deployment wurde nicht nachgewiesen.
+
+## 16. Repository-Port und Adapter – 2. November 2026
+
+### Ausgangssituation
+
+Vor diesem Refactoring verwendete `VehicleService` direkt `VehicleRepository`. Dadurch war die Application-Schicht an Spring Data JPA gekoppelt.
+
+Das erschwerte es, die Geschäftslogik unabhängig von der konkreten Persistenztechnologie zu testen oder später eine andere Implementierung einzusetzen.
+
+### Ziel
+
+Die Application-Schicht soll nur noch wissen, welche Speicheroperationen sie benötigt. Wie diese Operationen technisch umgesetzt werden, entscheidet die Persistence-Schicht.
+
+### Architektur
+
+```text
+VehicleService
+      |
+      v
+VehicleStore (Application-Port)
+      ^
+      |
+VehicleRepositoryAdapter (Persistence)
+      |
+      v
+VehicleRepository / Spring Data JPA
+```
+
+### 1. Application-Port: `VehicleStore`
+
+`VehicleStore` ist ein Interface in der Application-Schicht.
+
+Es beschreibt die benötigten Operationen:
+
+- Fahrzeug anhand der ID suchen
+- Fahrzeug anhand des Kennzeichens suchen
+- Kennzeichen auf Existenz prüfen
+- Fahrzeug erstellen
+- Fahrzeug aktualisieren
+- Fahrzeug löschen
+- Fahrzeuge paginiert abrufen
+
+Das Interface enthält keine Spring-Data- oder JPA-spezifischen Typen.
+
+### 2. Persistence-Adapter: `VehicleRepositoryAdapter`
+
+Der Adapter implementiert `VehicleStore`.
+
+Seine Aufgaben:
+
+- Spring Data Repository verwenden
+- JPA-Entities erstellen und aktualisieren
+- Entities in Application-Ergebnisse umwandeln
+- Spring-Data-Pagination in `VehiclePageResult` übertragen
+
+Damit bleibt die technische Persistenzlogik außerhalb der Application-Schicht.
+
+### 3. Dependency Inversion
+
+Die Application-Schicht hängt von einer Abstraktion ab:
+
+```text
+Application -> VehicleStore
+Persistence -> VehicleStore
+```
+
+Der Adapter implementiert das Interface. Spring übernimmt zur Laufzeit die Dependency Injection.
+
+Das ist ein Beispiel für Dependency Inversion und einen Port-and-Adapter-Ansatz.
+
+### 4. Umgang mit Optional
+
+Die Update-Operation gibt ein `Optional<VehicleResult>` zurück.
+
+Damit kann der Adapter ausdrücken, dass das Fahrzeug während des Updates möglicherweise nicht mehr existiert. Die Application-Schicht entscheidet, daraus eine `VehicleNotFoundException` zu machen.
+
+### 5. Tests
+
+Für `VehicleService` wurden Unit-Tests mit JUnit und Mockito ergänzt.
+
+Der Service kann damit unabhängig von PostgreSQL und Spring Data getestet werden. Ein Mock von `VehicleStore` simuliert die benötigten Speicheroperationen.
+
+**Verifikation:** Der vollständige Testlauf ergab 34 bestandene Tests und `BUILD SUCCESS`.
+
+### Gelernt
+
+- Unterschied zwischen Repository-Port und Persistence-Adapter
+- Dependency Inversion
+- Entkopplung der Application-Schicht von Spring Data JPA
+- Verwendung von Mockito für isolierte Unit-Tests
+- Trennung von Application-Modellen und JPA-Entities
+- Spring Dependency Injection über Interface-Implementierungen
+
+### Status
+
+Lokal umgesetzt und getestet. Noch nicht committed, gepusht oder gemergt. Kein Deployment erfolgt.
+
+### Nächster Schritt
+
+Staged Diff prüfen und anschließend einen nachvollziehbaren Commit vorbereiten.
