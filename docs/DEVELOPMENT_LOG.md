@@ -226,3 +226,61 @@ Kein produktives Deployment bestätigt.
 
 Prüfen, ob ein Repository-Port die Application-Schicht sinnvoll
 von Spring Data JPA entkoppeln kann.
+
+### 2. November 2026 – Repository-Port für Vehicle Application
+
+**Feature-Branch:** `refactor/vehicle-repository-port`
+
+#### Ziel
+
+Die Application-Schicht soll nicht mehr direkt von Spring Data JPA und
+Persistence-Typen abhängen. Die bisherige API/Application-Entkopplung
+wird damit um die Persistence-Grenze erweitert.
+
+#### Änderungen
+
+- `VehicleStore` als Interface in der Application-Schicht eingeführt.
+- `VehicleService` verwendet `VehicleStore` statt `VehicleRepository`.
+- `VehicleRepositoryAdapter` in der Persistence-Schicht implementiert
+  den Application-Port.
+- JPA-Zugriffe und Entity-to-Result-Mapping liegen im Adapter.
+- Spring-Data-Typen wie `Page`, `Pageable` und `Sort` bleiben innerhalb
+  der Persistence-Schicht.
+- `VehiclePageResult` bildet das paginierte Ergebnis für die
+  Application-Schicht ab.
+- Update liefert über den Port `Optional<VehicleResult>`, damit ein
+  zwischenzeitlich nicht mehr vorhandenes Fahrzeug kontrolliert
+  behandelt werden kann.
+- Unit-Tests für `VehicleService` mit Mockito ergänzt.
+
+#### Architektur und Lernpunkte
+
+- Die Application-Schicht definiert den Port, den sie benötigt.
+- Die Persistence-Schicht implementiert diesen Port.
+- Dependency Inversion bedeutet hier, dass der Service von einer
+  Abstraktion abhängt und nicht von der konkreten Repository-Klasse.
+- Der Adapter übersetzt zwischen Application-Modellen und JPA-Entities.
+- Die Abhängigkeit zur Datenbanktechnik wird dadurch innerhalb der
+  Application-Schicht reduziert.
+
+#### Verifikation
+
+- `./scripts/test.sh` erfolgreich ausgeführt.
+- 34 Tests, 0 Fehler, 0 Fehlschläge, 0 übersprungene Tests.
+- Maven meldete `BUILD SUCCESS`.
+- `postgres-test` wurde nach dem Testlauf gestoppt.
+- `git diff --check` meldete keine Fehler.
+
+#### Status
+
+Lokal umgesetzt und getestet.
+
+Noch nicht committed, gepusht oder gemergt.
+Kein produktives Deployment bestätigt.
+
+#### Nächste Schritte
+
+- Vollständigen Git-Diff einschließlich neuer Dateien prüfen.
+- Lerndokumentation aktualisieren und überprüfen.
+- Änderungen stagen und staged Diff prüfen.
+- Erst danach Commit erstellen.
