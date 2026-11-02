@@ -281,6 +281,5 @@ Kein produktives Deployment bestätigt.
 #### Nächste Schritte
 
 - Vollständigen Git-Diff einschließlich neuer Dateien prüfen.
-- Lerndokumentation aktualisieren und überprüfen.
 - Änderungen stagen und staged Diff prüfen.
 - Erst danach Commit erstellen.

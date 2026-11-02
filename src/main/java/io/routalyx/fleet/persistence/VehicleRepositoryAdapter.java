@@ -72,6 +72,7 @@ public class VehicleRepositoryAdapter implements VehicleStore {
                 })
                 .map(this::toResult);
     }
+
     @Override
     public void deleteVehicle(UUID id) {
         vehicleRepository.deleteById(id);
