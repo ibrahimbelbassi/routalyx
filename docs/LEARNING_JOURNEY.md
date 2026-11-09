@@ -1,10 +1,10 @@
 # Routalyx – Learning Journey
 
-**Stand:** 31. Oktober 2026
+**Stand:** 9. November 2026
 **Projekt:** Routalyx – Flottenmanagement und Analytics
-**Aktueller Entwicklungsbranch:** `feat/standardized-api-errors`
-**Aktueller Hauptbranch:** `main` – Commit `1ca4f09`
-**Letzter Meilenstein:** Standardisierte API-Fehlerantworten mit RFC 9457
+**Aktueller Entwicklungsbranch:** `main`
+**Aktueller Hauptbranch:** `main` – Merge-Commit `42d8a21`
+**Letzter Meilenstein:** Kubernetes-Deployment in kind mit GHCR-Image, PostgreSQL in Docker Compose und erfolgreicher GitHub Actions CI
 
 ## 1. Projektziel und Lernansatz
 
@@ -210,7 +210,27 @@ GitHub Actions verwendet hierfür Runner mit eigener Laufzeitumgebung. Ein auf d
 - Die GitHub-Actions-Läufe für beide Pull Requests waren laut bestätigtem Ergebnis erfolgreich.
 - Der lokale Docker-Build von `routalyx:ci` war erfolgreich.
 
-**Noch nicht umgesetzt:** Das Image wird nicht in eine Registry gepusht. Es gibt noch kein automatisiertes Deployment oder Rollback.
+### Registry und Deployment – aktualisierter Stand
+
+Seit dem Kubernetes-Meilenstein wurde das Docker-Image in GHCR bereitgestellt und in der lokalen kind-Umgebung verwendet.
+
+- GHCR-Image: `ghcr.io/ibrahimbelbassi/routalyx:sha-8cc5b17`
+- Kubernetes-Deployment in kind erfolgreich durchgeführt.
+- Kubernetes-Pod wurde Ready.
+- Actuator Health-Endpunkt und Swagger UI über Port-Forwarding geprüft.
+- PostgreSQL bleibt in Docker Compose auf dem Fedora-Host.
+
+**Umgesetzt und verifiziert:**
+- Maven-Test-Job in GitHub Actions.
+- Docker-Image-Build in GitHub Actions.
+- Image-Veröffentlichung in GHCR im bisherigen Workflow.
+- Lokales Kubernetes-Deployment in kind.
+
+**Noch nicht umgesetzt:**
+- Automatisiertes Kubernetes-Deployment aus GitHub Actions.
+- Deployment in eine externe oder produktive Kubernetes-Umgebung.
+- Automatisierter Rollback-Prozess.
+- Vollständiger produktiver CD-Workflow.
 
 ### Begriffe
 
@@ -222,11 +242,13 @@ GitHub Actions verwendet hierfür Runner mit eigener Laufzeitumgebung. Ein auf d
 
 ### Nächste Lernziele
 
-1. Fehlerfall von `scripts/test.sh` gezielt prüfen.
-2. Flyway-Metadatenwarnung HTTP 401 untersuchen.
-3. Spring-Warnung zu `spring.jpa.open-in-view` bewusst bewerten.
-4. Einen Registry-Push planen und erst nach Prüfung der Zugangsdaten und Berechtigungen implementieren.
-5. Darauf aufbauend einen kontrollierten Deployment-Prozess mit Verifikation und Rollback entwickeln.
+1. Kubernetes Deployment, ReplicaSet, Pod und Service weiter vertiefen.
+2. Änderungen an ConfigMap und Deployment nachvollziehen und kontrolliert ausrollen.
+3. Deployment-Rollout, Rollout-Status und Rollback mit Kubernetes kennenlernen.
+4. GitHub Actions um automatisierte Deployment-Verifikation erweitern.
+5. Secrets und Berechtigungen für CI/CD sicher verwalten.
+6. Kubernetes Observability mit Prometheus und Grafana vorbereiten.
+7. PostgreSQL vorerst weiterhin in Docker Compose betreiben und eine spätere Kubernetes-Datenbankmigration separat planen.
 
 ## 11. Lernstand
 
@@ -257,29 +279,45 @@ GitHub Actions verwendet hierfür Runner mit eigener Laufzeitumgebung. Ein auf d
 ### Noch offen
 
 **Tests und Fehlerdiagnose**
-- Fehlerfall von `scripts/test.sh` gezielt prüfen
-- Flyway-Metadatenwarnung HTTP 401 untersuchen
-- Spring-Warnung zu `spring.jpa.open-in-view` bewusst bewerten
+- Flyway-Metadatenwarnung HTTP 401 untersuchen.
+- Spring-Warnung zu `spring.jpa.open-in-view` bewusst bewerten.
+- Mockito-Warnung zur dynamischen Agent-Ladung bei Bedarf untersuchen.
 
 **Docker und Betrieb**
-- Docker-Build-Kontext und `.dockerignore` bei Bedarf weiter überprüfen
-- Laufzeitkonfiguration des Containers bei Änderungen erneut gezielt verifizieren
+- Docker-Build-Kontext und `.dockerignore` bei Bedarf weiter überprüfen.
+- Laufzeitkonfiguration des Containers bei Änderungen gezielt verifizieren.
 
-**Nächste DevOps-Meilensteine**
-- Docker-Image in eine Registry veröffentlichen
-- Registry-Zugangsdaten und Berechtigungen sicher konfigurieren
-- Deployment-Prozess mit Verifikation und Rollback aufbauen
-- Danach Kubernetes-Deployment für Routalyx vorbereiten, passend zum tatsächlichen Projektstand
+**Kubernetes**
+- Rollout-Verhalten bei neuen Image-Versionen untersuchen.
+- Deployment-Rollback praktisch durchführen.
+- Ressourcenlimits und Probes bei Last und Fehlerfällen untersuchen.
+- Kubernetes-Konfiguration schrittweise professionalisieren.
+
+**CI/CD**
+- Automatisiertes Deployment aus GitHub Actions ergänzen.
+- Deployment-Status und Health nach einem Rollout automatisch überprüfen.
+- Rollback bei einem fehlgeschlagenen Deployment planen.
+
+**Observability**
+- Prometheus und Grafana in der lokalen Lernumgebung vorbereiten.
+- Metrics, Logs und Traces voneinander unterscheiden und praktisch untersuchen.
 
 ### Aktuelle Abgrenzung
 
-**Bereits umgesetzt:** automatisierte Maven-Verifikation und Docker-Image-Build in GitHub Actions.
+**Umgesetzt und verifiziert:**
+- Maven-Verifikation in GitHub Actions.
+- Docker-Image-Build in GitHub Actions.
+- GHCR-Image für Routalyx.
+- Lokales Kubernetes-Deployment in kind.
+- Kubernetes Namespace, ConfigMap, Secret, Deployment und Service.
+- Startup-, Liveness- und Readiness-Probes.
+- PostgreSQL weiterhin in Docker Compose.
 
-**Noch nicht umgesetzt:** Registry-Push, automatisiertes Deployment und Rollback.
-
-### Nächster Schritt
-
-Die Dokumentationsänderungen abschließend prüfen und über einen separaten Commit und Pull Request in `main` integrieren. Danach den nächsten technischen Meilenstein anhand des tatsächlichen Projektstands festlegen.
+**Noch nicht umgesetzt:**
+- Automatisiertes Kubernetes-Deployment aus GitHub Actions.
+- Deployment in eine externe oder produktive Kubernetes-Umgebung.
+- Automatisierter Rollback.
+- Produktive Observability- und Alerting-Konfiguration.
 
 ## 12. Vehicle API 2.0 – Pagination und Statusfilter
 
@@ -616,3 +654,198 @@ Lokal umgesetzt und getestet. Noch nicht committed, gepusht oder gemergt. Kein D
 ### Nächster Schritt
 
 Staged Diff prüfen und anschließend einen nachvollziehbaren Commit vorbereiten.
+
+
+## 17. Kubernetes-Deployment mit kind – 9. November 2026
+
+### Ziel
+
+Routalyx erstmals in Kubernetes betreiben und die bisherige Container- und CI-Erfahrung auf ein lokales Kubernetes-Deployment übertragen.
+
+### Ausgangslage
+
+- Fedora als Entwicklungsumgebung.
+- kind-Cluster `dev`.
+- Docker Compose für PostgreSQL.
+- Spring Boot 4.0.8 mit Java 21.
+- GHCR als Container-Registry.
+- GitHub Actions für Tests und Docker-Image-Build.
+
+### Architektur
+
+```text
+Fedora Host
+│
+├── Docker Compose
+│   └── PostgreSQL 17
+│
+└── kind Kubernetes Cluster
+    └── Namespace: routalyx
+        ├── ConfigMap: routalyx-config
+        ├── Secret: routalyx-db
+        ├── Deployment: routalyx
+        │   └── Routalyx Pod
+        └── Service: routalyx (ClusterIP)
+```
+
+Die Anwendung läuft in Kubernetes, die PostgreSQL-Datenbank bleibt auf dem Fedora-Host in Docker Compose.
+
+### Kubernetes-Ressourcen
+
+#### Namespace
+
+Der Namespace `routalyx` gruppiert die Kubernetes-Ressourcen der Anwendung.
+
+Namespaces helfen dabei, Ressourcen logisch zu trennen und zu verwalten.
+
+#### ConfigMap
+
+Die ConfigMap `routalyx-config` enthält nicht-sensitive Konfiguration:
+
+- JDBC-Datenbank-URL
+- Datenbankbenutzername
+
+Konfiguration wird damit von der Deployment-Definition getrennt.
+
+#### Secret
+
+Das Kubernetes Secret `routalyx-db` enthält Datenbankzugangsdaten.
+
+Das Secret wurde außerhalb der versionierten YAML-Dateien erzeugt. Zugangsdaten werden nicht in Git eingecheckt.
+
+**Sicherheitshinweis:** Kubernetes Secrets sind nicht automatisch verschlüsselt, nur weil sie vom Typ Secret sind. Für produktive Umgebungen sind zusätzliche Zugriffskontrollen und eine geeignete Secret-Verwaltung notwendig.
+
+#### Deployment
+
+Das Deployment `routalyx` verwaltet einen Application-Pod.
+
+Es definiert unter anderem:
+
+- Container-Image
+- Replica-Anzahl
+- Umgebungsvariablen
+- Container-Port
+- CPU- und Memory-Requests
+- CPU- und Memory-Limits
+- Health-Probes
+
+Kubernetes sorgt dafür, dass der gewünschte Zustand – eine laufende Replica – eingehalten wird.
+
+#### Service
+
+Der Service `routalyx` verwendet den Typ `ClusterIP`.
+
+Er stellt einen stabilen internen Netzwerkzugang zu den Pods bereit. Der Service verwendet den Label-Selector `app: routalyx`.
+
+Die Verbindung zum Service wurde lokal über Port-Forwarding hergestellt:
+
+```bash
+kubectl port-forward -n routalyx svc/routalyx 8080:8080
+```
+
+Port-Forwarding ist eine temporäre Verbindung für Entwicklung und Diagnose und kein produktiver Ingress.
+
+### Health-Probes
+
+#### Startup-Probe
+
+Spring Boot benötigt Zeit für den Start und die Initialisierung.
+
+Die Startup-Probe gibt der Anwendung Zeit, hochzufahren, bevor Kubernetes die regulären Liveness-Prüfungen verwendet.
+
+#### Liveness-Probe
+
+Die Liveness-Probe prüft, ob die Anwendung grundsätzlich läuft.
+
+Sie verwendet:
+
+`/actuator/health/liveness`
+
+Eine fehlgeschlagene Liveness-Prüfung kann dazu führen, dass Kubernetes den Container neu startet.
+
+#### Readiness-Probe
+
+Die Readiness-Probe prüft, ob die Anwendung bereit ist, Requests anzunehmen.
+
+Sie verwendet:
+
+`/actuator/health/readiness`
+
+Die Readiness-Gruppe berücksichtigt zusätzlich die Datenbankverbindung. Ein nicht bereiter Pod soll keine regulären Requests erhalten.
+
+### Netzwerk: Kubernetes zu PostgreSQL
+
+Die PostgreSQL-Datenbank läuft nicht innerhalb des kind-Clusters.
+
+Die Spring-Boot-Anwendung verwendet:
+
+`jdbc:postgresql://172.18.0.1:5432/routalyx`
+
+Damit verbindet sich der Pod über das kind-/Docker-Netzwerk mit dem PostgreSQL-Dienst auf dem Fedora-Host.
+
+Diese Konfiguration ist für die aktuelle lokale Lernumgebung geeignet, aber nicht als allgemeine Produktionsarchitektur gedacht.
+
+### Ressourcen
+
+Das Deployment verwendet Requests und Limits:
+
+| Ressource | Request | Limit |
+|---|---:|---:|
+| CPU | 100m | 500m |
+| Memory | 256Mi | 512Mi |
+
+Requests dienen Kubernetes zur Planung der Pod-Platzierung.
+
+Limits begrenzen den Ressourcenverbrauch des Containers.
+
+### Verifikation
+
+- Deployment erfolgreich in kind angewendet.
+- Pod Ready (1/1).
+- Service und EndpointSlice überprüft.
+- Application-Logs kontrolliert.
+- PostgreSQL-Verbindung hergestellt.
+- Flyway validierte die Migration.
+- Schema-Version 1 war aktuell.
+- Actuator Health über Port-Forwarding erfolgreich geprüft.
+- Swagger UI über Port-Forwarding erreichbar.
+- `./scripts/test.sh`: 34 Tests, 0 Fehler, 0 Fehlschläge, 0 übersprungene Tests.
+- Maven meldete `BUILD SUCCESS`.
+- GitHub Actions Test-Job erfolgreich.
+- GitHub Actions Docker-Image-Build erfolgreich.
+
+Diese Ergebnisse beziehen sich auf die tatsächlich bestätigten Test- und Deployment-Läufe.
+
+### Git-Workflow
+
+- Feature-Branch: `feat/deploy-routalyx-kind`
+- Feature-Commit: `7c6a8a1`
+- PR #15 erfolgreich gemergt.
+- Merge-Commit: `42d8a21`
+- Lokaler `main` mit `origin/main` synchronisiert.
+- Working Tree nach dem Merge sauber bestätigt.
+
+### Lernpunkte
+
+- Kubernetes Deployment verwaltet Pods über ReplicaSets.
+- Pods sind die kleinste deploybare Einheit in Kubernetes.
+- Services stellen stabile Netzwerkzugänge bereit.
+- ConfigMaps und Secrets trennen Konfiguration von Deployment-Code.
+- Health-Probes unterscheiden Start, Leben und Bereitschaft.
+- Requests und Limits beeinflussen Scheduling und Ressourcenverbrauch.
+- kind ermöglicht Kubernetes-Lernen lokal.
+- Kubernetes und Docker Compose können in einer Lernumgebung gemeinsam verwendet werden.
+
+### Status und Abgrenzung
+
+Das lokale kind-Deployment ist umgesetzt und verifiziert.
+
+Es ist kein produktives Deployment.
+
+PostgreSQL verbleibt in Docker Compose.
+
+Ein automatisiertes Kubernetes-Deployment aus GitHub Actions und ein Rollback-Prozess sind noch nicht umgesetzt.
+
+### Nächster Schritt
+
+Kubernetes-Rollouts und Rollbacks zunächst manuell lernen. Anschließend kann ein kontrollierter Deployment-Job in GitHub Actions ergänzt werden.

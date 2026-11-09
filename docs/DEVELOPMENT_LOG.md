@@ -283,3 +283,104 @@ Kein produktives Deployment bestätigt.
 - Vollständigen Git-Diff einschließlich neuer Dateien prüfen.
 - Änderungen stagen und staged Diff prüfen.
 - Erst danach Commit erstellen.
+
+### 9. November 2026 – Kubernetes-Deployment mit kind
+
+**Feature-Branch:** `feat/deploy-routalyx-kind`
+
+#### Ziel
+
+Routalyx erstmals in einem lokalen Kubernetes-Cluster mit kind betreiben. Dabei sollen die bereits vorhandenen Docker-, Spring-Boot-, PostgreSQL- und GitHub-Actions-Kenntnisse in einem Deployment-Workflow zusammengeführt werden.
+
+#### Umsetzung
+
+- Lokalen Kubernetes-Cluster `dev` mit kind verwendet.
+- Kubernetes-Namespace `routalyx` erstellt.
+- ConfigMap `routalyx-config` für die Spring-Datasource-Konfiguration erstellt.
+- Kubernetes Secret `routalyx-db` für Datenbankzugangsdaten verwendet.
+- Deployment `routalyx` mit einer Replica erstellt.
+- GHCR-Image `ghcr.io/ibrahimbelbassi/routalyx:sha-8cc5b17` verwendet.
+- CPU- und Memory-Requests sowie Limits definiert.
+- Startup-, Liveness- und Readiness-Probes konfiguriert.
+- Kubernetes Service vom Typ `ClusterIP` erstellt.
+- Spring Boot Actuator Health-Probes für Kubernetes aktiviert.
+- PostgreSQL bleibt in Docker Compose auf dem Fedora-Host.
+
+#### Verwendete Kubernetes-Ressourcen
+
+| Ressource | Name | Zweck |
+|---|---|---|
+| Namespace | `routalyx` | Isoliert Routalyx-Ressourcen |
+| ConfigMap | `routalyx-config` | Nicht-sensitive Konfiguration |
+| Secret | `routalyx-db` | Datenbankzugangsdaten |
+| Deployment | `routalyx` | Verwaltet den Application-Pod |
+| Service | `routalyx` | Stabile interne Erreichbarkeit |
+
+#### Architektur
+
+Die Spring-Boot-Anwendung läuft innerhalb des kind-Clusters. PostgreSQL bleibt außerhalb des Kubernetes-Clusters in Docker Compose auf dem Fedora-Host.
+
+Die Anwendung erreicht PostgreSQL über:
+
+`jdbc:postgresql://172.18.0.1:5432/routalyx`
+
+Diese Architektur ist eine lokale Lernlösung. Die Datenbank wurde bewusst nicht nach Kubernetes verschoben.
+
+#### Health-Probes
+
+- **Startup-Probe:** berücksichtigt den längeren Start von Spring Boot.
+- **Liveness-Probe:** prüft, ob die Anwendung grundsätzlich läuft.
+- **Readiness-Probe:** prüft, ob die Anwendung für Requests bereit ist und die Datenbank verfügbar ist.
+
+Die Readiness-Probe verhindert, dass Kubernetes den Pod als bereit meldet, bevor die benötigten Abhängigkeiten verfügbar sind.
+
+#### Verifikation
+
+- Kubernetes-Pod erfolgreich gestartet und Ready (1/1).
+- Kubernetes-Service und EndpointSlice überprüft.
+- Application-Logs geprüft.
+- PostgreSQL-Verbindung erfolgreich hergestellt.
+- Flyway validierte die vorhandene Migration.
+- Datenbankschema-Version 1 war aktuell.
+- Actuator Health-Endpunkt über Port-Forwarding erfolgreich geprüft.
+- Swagger UI über Kubernetes Port-Forwarding erreichbar.
+- `./scripts/test.sh`: 34 Tests, 0 Fehler, 0 Fehlschläge, 0 übersprungene Tests.
+- Maven meldete `BUILD SUCCESS`.
+- GitHub Actions: Test-Job und Docker-Image-Build erfolgreich.
+
+#### Git und Pull Request
+
+- Feature-Commit: `7c6a8a1`
+- Commit-Nachricht: `feat: deploy Routalyx to local kind cluster`
+- PR #15 erfolgreich in `main` integriert.
+- Merge-Commit: `42d8a21`
+- Lokaler `main` wurde mit `origin/main` synchronisiert.
+- Working Tree war anschließend sauber.
+
+#### Lernpunkte
+
+- Unterschied zwischen Docker Compose und Kubernetes.
+- Kubernetes Namespace, Deployment, Pod und Service.
+- ConfigMap gegenüber Secret.
+- ClusterIP-Service und Port-Forwarding.
+- Bedeutung von Startup-, Liveness- und Readiness-Probes.
+- CPU- und Memory-Requests gegenüber Limits.
+- Zugriff eines Kubernetes-Pods auf eine Datenbank außerhalb des Clusters.
+- kind als lokale Kubernetes-Lernumgebung.
+- Deployment- und Git-Workflow mit Feature-Branch, Pull Request und CI.
+
+#### Abgrenzung
+
+Routalyx läuft in der lokalen kind-Lernumgebung.
+
+Ein Deployment in eine externe oder produktive Kubernetes-Umgebung wurde nicht durchgeführt.
+
+PostgreSQL bleibt weiterhin in Docker Compose.
+
+#### Nächste Schritte
+
+- Kubernetes-Ressourcen und deren Verhalten weiter vertiefen.
+- GitHub Actions um automatisierte Deployment-Verifikation erweitern.
+- Deployment-Verifikation und Rollback kennenlernen.
+- Observability mit Prometheus und Grafana in einem späteren Arbeitspaket vorbereiten.
+- Automatisiertes Kubernetes-Deployment aus GitHub Actions als separates CD-Arbeitspaket planen.
